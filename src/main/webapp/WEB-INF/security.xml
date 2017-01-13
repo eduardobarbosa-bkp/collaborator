@@ -1,0 +1,43 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:security="http://www.springframework.org/schema/security"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+	http://www.springframework.org/schema/beans/spring-beans-3.2.xsd
+	http://www.springframework.org/schema/context
+	http://www.springframework.org/schema/context/spring-context-3.2.xsd
+	http://www.springframework.org/schema/security
+    http://www.springframework.org/schema/security/spring-security-3.2.xsd">
+
+    <context:component-scan base-package="br.com.cds.ebc.collaborator" />
+
+    <security:http pattern="/**/*.css" security="none" />
+    <security:http pattern="/**/*.js" security="none" />
+    <security:http pattern="/**/*.png" security="none" />
+    <security:http pattern="/**/*.jpg" security="none" />
+    <security:http pattern="/**/*.gif" security="none" />
+    <security:http pattern="/javax.faces.resource/**" security="none" />
+
+    <!--
+        resource security
+        -->
+    <security:http auto-config="true" access-denied-page="/views/accessDenied.xhtml">
+        <security:form-login login-page="/views/login.xhtml"  />
+        <security:intercept-url pattern="/views/login.xhtml" access="IS_AUTHENTICATED_ANONYMOUSLY" />
+        <security:intercept-url pattern="/**" access="ROLE_USER" />
+    </security:http>
+    <!--
+    business logic (method) security
+    -->
+    <security:global-method-security
+            secured-annotations="enabled" >
+    </security:global-method-security>
+    <!--
+    manager responsible for loading user account with assigned roles
+    -->
+    <security:authentication-manager alias="authenticationManager">
+        <security:authentication-provider
+                user-service-ref="userDetailsService" />
+    </security:authentication-manager>
+
+</beans>

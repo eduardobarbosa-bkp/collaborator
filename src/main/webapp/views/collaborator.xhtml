@@ -1,0 +1,204 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://java.sun.com/jsf/html"
+      xmlns:f="http://java.sun.com/jsf/core"
+      xmlns:ui="http://java.sun.com/jsf/facelets"
+      xmlns:c="http://java.sun.com/jstl/core"
+      xmlns:p="http://primefaces.org/ui">
+<h:head>
+    <h:outputStylesheet name="css/style.css" />
+</h:head>
+<h:body>
+
+    <p:growl id="growl" sticky="true" showDetail="true" showSummary="false" life="3000" />
+
+
+     <div align="right"><p:outputLabel value="#{loginController.loggedUser}  " /><p:commandButton value="Sair" icon="fa fa-reply" action="#{loginController.logout}" /></div>
+     <br/>
+
+    <p:panel header="Colaboradores" styleClass="collaboratorPanel">
+
+         <h:form id="newForm">
+            <div>
+                <p:inputText placeholder="Pesquisar" id="search" value="#{collaboratorController.searchTerm}" />
+                <p:commandButton action="#{collaboratorController.search}" title="Visualizar" icon="fa fa-search" update="dataGrid" />
+                <p:commandButton value="Novo" icon="fa fa-plus" style="float: right" action="#{collaboratorController.newRecord}" oncomplete="PF('collaboratorDialog').show();" update="collaboratorForm"/>
+            </div>
+         </h:form>
+        <br/>
+
+    <h:panelGroup id="dataGrid">
+      <ui:repeat  value="#{collaboratorController.listCollaborators}" var="collaborator" >
+          <div class="card">
+              <div class="photo"></div>
+              <ul>
+                  <li><b><h:outputText value="#{collaborator.name}" /></b></li>
+                  <li><h:outputText  value="#{collaborator.role.description}" /></li>
+                  <li><h:outputText  value="#{collaborator.department.name}" /></li>
+              </ul>
+              <button class="contact" id="main-button" onclick="contactView()">Visualizar</button>
+              <h:form>
+              <p:remoteCommand name="contactView"
+                               action="#{collaboratorController.edit}" oncomplete="PF('collaboratorDialogView').show();" update="collaboratorFormView" >
+                  <f:setPropertyActionListener target="#{collaboratorController.selectedId}"
+                                               value="#{collaborator.id}" />
+              </p:remoteCommand>
+              </h:form>
+          </div>
+        </ui:repeat>
+   </h:panelGroup>
+
+
+       <button class="more" onclick="moreContact()">Mais</button>
+            <h:form>
+                <p:remoteCommand name="moreContact"
+                         actionListener="#{collaboratorController.more}" update="dataGrid" />
+            </h:form>
+    </p:panel>
+
+
+    <p:dialog header="Colaborador" widgetVar="collaboratorDialog" modal="true">
+
+        <h:form id="collaboratorForm">
+
+            <p:panelGrid id="panel1" columns="1" border="3" cellpadding="5" layout="grid"
+                         cellspacing="1">
+
+                <h:inputHidden id="id" value="#{collaboratorController.collaborator.id}"/>
+
+                <h:form>
+                    <p:fileUpload label="Selecionar" cancelLabel="Cancelar"
+                    fileUploadListener="#{collaboratorController.handleFileUpload}"
+                    allowTypes="/(\.|\/)(png|jpg)$/"
+                    multiple="false" mode="advanced" sizeLimit="52428800" dragDropSupport="true" auto="false"  />
+                </h:form>
+
+                <p:inputText id="name" placeholder="Nome" value="#{collaboratorController.collaborator.name}" />
+
+                <p:autoComplete id="roles" var="role" itemLabel="#{role.description}" itemValue="#{role}" placeholder="Cargo" dropdown="true"
+                                value="#{collaboratorController.collaborator.role}" completeMethod="#{collaboratorController.completeRole}"
+                                converter="#{roleConverter}"/>
+
+                <p:autoComplete id="departments" var="department" itemLabel="#{department.name}" itemValue="#{department}" placeholder="Departamento" dropdown="true"
+                                value="#{collaboratorController.collaborator.department}" completeMethod="#{collaboratorController.completeDepartment}"
+                        converter="#{departmentConverter}"/>
+
+                <p:inputTextarea id="background" placeholder="Experiência" value="#{collaboratorController.collaborator.background}" />
+
+                <p:autoComplete id="skills" placeholder="Compentências" value="#{collaboratorController.collaborator.skills}" completeMethod="#{collaboratorController.completeSkill}"
+                                var="skill" multiple="true" itemLabel="#{skill.name}" itemValue="#{skill}" converter="#{skillConverter}" forceSelection="true">
+                     <p:column>
+                        <h:outputText value="#{skill.name}" />
+                    </p:column>
+                </p:autoComplete>
+
+                <h:form id="newFormContato">
+                    <div align="right"><p:commandButton value="Novo" icon="fa fa-plus" action="#{collaboratorController.newContact}" oncomplete="PF('contactDialog').show();" update="contactForm"/></div>
+                </h:form>
+                <p:dataTable id="dataGridContact" emptyMessage="Não há contatos cadastrados" tableStyle="table-layout: auto;"
+                             value="#{collaboratorController.collaborator.contacts}" var="contact">
+                    <p:column headerText="Tipo" >
+                        <h:outputText value="#{contact.contactType.label}" />
+                    </p:column>
+                    <p:column headerText="Contato" >
+                        <h:outputText value="#{contact.description}" />
+                    </p:column>
+                    <p:column>
+                            <p:commandButton title="Remover" icon="fa fa-remove"
+                                             action="#{collaboratorController.deleteContact}" update="@form" process="@this" >
+                                <f:setPropertyActionListener
+                                        target="#{collaboratorController.selectedContact}"
+                                        value="#{contact}" />
+                            </p:commandButton>
+                    </p:column>
+                </p:dataTable>
+
+                <p:inputText placeholder="Endereço" id="address" value="#{collaboratorController.collaborator.address}" />
+
+                <p:commandButton value="Salvar" actionListener="#{collaboratorController.save}"
+                                     update="dataGrid, dataGridContact, collaboratorForm, growl" oncomplete="PF('collaboratorDialog').hide();" />
+            </p:panelGrid>
+        </h:form>
+    </p:dialog>
+
+
+    <p:dialog header="Colaborador" widgetVar="collaboratorDialogView" modal="true">
+
+        <h:form id="collaboratorFormView">
+
+            <p:panelGrid  columns="1" border="3" cellpadding="5" layout="grid"
+                         cellspacing="1">
+
+                <div class="photo" style="top: 0px;"></div>
+
+                <h:outputText  value="#{collaboratorController.collaborator.name}" />
+
+                <h:outputText  value="#{collaboratorController.collaborator.role.description}"/>
+
+                <h:outputText value="#{collaboratorController.collaborator.department.name}" />
+
+                <h:outputText value="#{collaboratorController.collaborator.background}" />
+
+
+                <ui:repeat value="#{collaboratorController.collaborator.skills}" var="skill">
+                    <h:outputText value="#{skill.name} " />
+                </ui:repeat>
+
+
+                <ui:repeat value="#{collaboratorController.collaborator.contacts}" var="contact" >
+                    <h:panelGrid columns="2">
+                        <h:outputText value="#{contact.contactType.label}" />
+                        <h:outputText value="#{contact.description}"/>
+                    </h:panelGrid>
+                </ui:repeat>
+
+
+                <h:outputText  value="#{collaboratorController.collaborator.address}" />
+
+            </p:panelGrid>
+
+        </h:form>
+
+        <h:form id="commandFormView">
+
+            <p:commandButton title="Remover" icon="fa fa-remove"
+                             action="#{collaboratorController.delete}" ajax="false">
+                <f:setPropertyActionListener target="#{collaboratorController.selectedId}"
+                                             value="#{collaboratorController.collaborator.id}" />
+            </p:commandButton>
+            <p:commandButton title="Alterar" icon="fa fa-edit"
+                             action="#{collaboratorController.edit}" oncomplete="PF('collaboratorDialogView').hide();PF('collaboratorDialog').show();" update="collaboratorForm" >
+                <f:setPropertyActionListener target="#{collaboratorController.selectedId}"
+                                             value="#{collaboratorController.collaborator.id}" />
+            </p:commandButton>
+
+        </h:form>
+
+    </p:dialog>
+
+    <p:dialog header="Contato" widgetVar="contactDialog" modal="true">
+
+        <h:form id="contactForm">
+            <p:panelGrid  columns="1" border="3" cellpadding="5" layout="grid"
+                          cellspacing="1">
+
+                <h:inputHidden id="contactId"  value="#{collaboratorController.contact.id}"/>
+
+                <p:selectOneMenu id="contactTypes" value="#{collaboratorController.contact.contactType}" >
+                    <f:selectItems value="#{collaboratorController.contactTypes}" var="contactType"
+                                   itemLabel="#{contactType.label}" itemValue="#{contactType}" />
+                </p:selectOneMenu>
+
+                <p:inputText id="contactDescription" placeholder="Descrição" value="#{collaboratorController.contact.description}" />
+
+                <p:commandButton value="Salvar" actionListener="#{collaboratorController.saveContact}"
+                                 update="contactForm, :collaboratorForm:dataGridContact, growl" oncomplete="PF('contactDialog').hide();" />
+
+            </p:panelGrid>
+
+        </h:form>
+    </p:dialog>
+
+</h:body>
+</html>

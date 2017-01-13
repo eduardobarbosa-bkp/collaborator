@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:f="http://xmlns.jcp.org/jsf/core">
+<h:head>
+    <meta name="google-signin-client_id" content="958920794552-gaf09dulpq6vmiomstb5li6t3jsbislr.apps.googleusercontent.com" />
+    <h:outputStylesheet name="css/style.css" />
+    <h:outputScript name="js/platform.js" />
+</h:head>
+<f:view>
+    <h:form>
+       <p:growl id="growl" sticky="true" showDetail="true" showSummary="false" life="3000" />
+
+        <p:panel styleClass="loginPanel" header="Login" widgetVar="dlg">
+            <h:panelGrid columns="1" cellpadding="5">
+                <p:inputText placeholder="Usuário" id="username" value="#{loginController.username}" required="true" label="username" requiredMessage="Um usuário é necessário para autenticação." />
+                <p:password placeholder="Senha" id="password" value="#{loginController.password}" required="true" label="password" requiredMessage="Você não digitou uma senha." />
+
+
+                <p:commandButton value="Entrar" update="growl" actionListener="#{loginController.login}"
+                                 oncomplete="handleLoginRequest(xhr, status, args)" />
+
+                </h:panelGrid>
+               <div style="text-align: center">
+                <p:outputLabel value="Ou entre com" />
+               </div>
+
+                <h:panelGrid columns="2" cellpadding="5">
+                    <p:commandButton value="facebook" icon="fa fa-facebook-official" type="button" onclick="facebookSingIn()"/>
+                    <p:commandButton value="google+" icon="fa fa-google-plus" type="button" onclick="googleSingIn()"/>
+                </h:panelGrid>
+
+        </p:panel>
+    </h:form>
+
+    <h:form>
+        <p:remoteCommand name="loginRemoteFunction" actionListener="#{loginController.loginAuth2}" />
+    </h:form>
+
+    <script type="text/javascript">
+
+
+        function handleLoginRequest(xhr, status, args) {
+            if(args.validationFailed || !args.loggedIn) {
+                PF('dlg').jq.effect("shake", {times:5}, 100);
+            }
+        }
+
+        //google login
+        gapi.load('auth2', function() {
+            gapi.auth2.init();
+        });
+
+        function googleSingIn() {
+            var that = this;
+            var auth2 = gapi.auth2.getAuthInstance();
+            auth2.signIn().then(function (googleUser) {
+
+                var profile = googleUser.getBasicProfile();
+                var authResponse = googleUser.getAuthResponse();
+                that.loginRemoteFunction([{name: 'name', value: googleUser.getBasicProfile().getName()}, {name: 'username', value: googleUser.Zi.access_token}, {name: 'token', value: authResponse.id_token}]);
+            });
+        };
+
+        //facebook login
+        window.fbAsyncInit = function() {
+            FB.init({
+                appId      : '1726299701019144',
+                xfbml      : true,
+                version    : 'v2.8'
+            });
+            FB.AppEvents.logPageView();
+        };
+
+        (function(d, s, id){
+            var js, fjs = d.getElementsByTagName(s)[0];
+            if (d.getElementById(id)) {return;}
+            js = d.createElement(s); js.id = id;
+            js.src = "//connect.facebook.net/en_US/sdk.js";
+            fjs.parentNode.insertBefore(js, fjs);
+        }(document, 'script', 'facebook-jssdk'));
+
+
+        function facebookSingIn(){
+            FB.login(function(response){
+                handleFacebookCallback(response);
+            }, {scope: 'public_profile,email'});
+        }
+
+        function handleFacebookCallback(responseLogin){
+            var that = this;
+            FB.api('/me', function(response) {
+                that.loginRemoteFunction([{name: 'name', value: response.name}, {name: 'username', value: responseLogin.authResponse.accessToken}, {name: 'token', value: responseLogin.authResponse.signedRequest}]);
+            });
+        }
+
+    </script>
+</f:view>
+</html>
